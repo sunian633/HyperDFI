@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument('--temp', default=0.1, type=float, help='temperature')
     parser.add_argument('--mult', default=1e-1, type=float, help='multiplication factor')
     parser.add_argument('--ssl_reg', default=1e-2, type=float, help='weight for ssl loss')
-    parser.add_argument('--data', default='DrugBank-df', type=str, help='name of dataset')
+    parser.add_argument('--data', default='PubMed-dfc', type=str, help='name of dataset')
     parser.add_argument('--tstEpoch', default=1, type=int, help='number of epoch to test while training')
     parser.add_argument('--gpu', default='0', type=int, help='indicates which gpu to use')
     parser.add_argument('--seed', default=42, type=int, help='seed')

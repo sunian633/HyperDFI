@@ -8,6 +8,9 @@ import torch.utils.data as data
 import torch.utils.data as dataloader
 
 
+POSITIVE_RELATION = 1.0
+
+
 class DataLoader:
     def __init__(self):
         self.data = args.data
@@ -66,6 +69,10 @@ class DataLoader:
 
         neutral_relation = -1
         relation_dict = {r: i for i, r in enumerate(np.sort(np.unique(relations)).tolist())}
+        if POSITIVE_RELATION not in relation_dict:
+            raise ValueError(
+                'Positive relation label {} is missing from dataset {}'.format(
+                    POSITIVE_RELATION, dataset))
 
         labels = np.full((num_drugs, num_foods), neutral_relation, dtype=np.int32)
         labels[drug_nodes, food_nodes] = np.array([relation_dict[r] for r in relations])
@@ -129,12 +136,21 @@ class DataLoader:
 
         relation_mx_train = np.zeros(num_drugs * num_foods, dtype=np.float32)
         relation_mx_test = np.zeros(num_drugs * num_foods, dtype=np.float32)
-        if post_relation_map is None:
-            relation_mx_train[train_idx] = labels[train_idx].astype(np.float32) + 1.
-            relation_mx_test[test_idx] = labels[test_idx].astype(np.float32) + 1.
-        else:
-            relation_mx_train[train_idx] = np.array(
-                [post_relation_map[r] for r in class_values[labels[train_idx]]]) + 1.
+
+        # The classifier is trained with both positive (1) and negative (-1)
+        # samples, but the bipartite graph represents observed interactions.
+        # Therefore, only positive samples are added as graph edges.
+        positive_class = relation_dict[POSITIVE_RELATION]
+        positive_train_mask = train_labels == positive_class
+        positive_test_mask = test_labels == positive_class
+        positive_train_idx = train_idx[positive_train_mask]
+        positive_test_idx = test_idx[positive_test_mask]
+
+        relation_mx_train[positive_train_idx] = 1.0
+        relation_mx_test[positive_test_idx] = 1.0
+
+        assert np.all(relation_mx_train[train_idx[~positive_train_mask]] == 0.0)
+        assert np.all(relation_mx_test[test_idx[~positive_test_mask]] == 0.0)
 
         relation_mx_train = sp.csr_matrix(relation_mx_train.reshape(num_drugs, num_foods))
         relation_mx_test = sp.csr_matrix(relation_mx_test.reshape(num_drugs, num_foods))

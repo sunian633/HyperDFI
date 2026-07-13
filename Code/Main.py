@@ -116,7 +116,7 @@ class Coach:
 
             regLoss = compute_reg_loss(self.model) * args.reg
             loss = ceLoss + regLoss + sslLoss
-            loss = ceLoss + regLoss
+            # loss = ceLoss + regLoss
             epLoss += loss.item()
             epPreLoss += ceLoss.item()
             self.opt.zero_grad()
